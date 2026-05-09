@@ -1,0 +1,63 @@
+# TrueNAS SCALE deployment compose — gluetun + qbittorrent + port-sync stack.
+# Secrets injected via Infisical:
+#   WIREGUARD_PRIVATE_KEY  — ProtonVPN WireGuard private key
+#   QBITTORRENT_PASSWORD   — qBittorrent WebUI password
+
+services:
+  gluetun:
+    container_name: gluetun
+    image: qmcgaw/gluetun:latest
+    pull_policy: always
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "30024:30024"
+    environment:
+      VPN_SERVICE_PROVIDER: protonvpn
+      VPN_TYPE: wireguard
+      WIREGUARD_ADDRESSES: 10.2.0.2/32
+      SERVER_COUNTRIES: United States
+      VPN_PORT_FORWARDING: "on"
+      VPN_PORT_FORWARDING_PROVIDER: protonvpn
+      FIREWALL_OUTBOUND_SUBNETS: 192.168.68.0/24
+      # --- secret injected by Infisical ---
+      WIREGUARD_PRIVATE_KEY: ${WIREGUARD_PRIVATE_KEY}
+    volumes:
+      - /mnt/cell_block_d/apps/qbittorrent-vpn/gluetun:/gluetun
+      - /mnt/cell_block_d/apps/qbittorrent-vpn/gluetun-port:/tmp/gluetun
+
+  qbittorrent:
+    container_name: qbittorrent
+    image: linuxserver/qbittorrent:latest
+    restart: unless-stopped
+    network_mode: container:gluetun
+    depends_on:
+      - gluetun
+    environment:
+      PUID: 568
+      PGID: 568
+      WEBUI_PORT: 30024
+    volumes:
+      - /mnt/cell_block_d/apps/qbittorrent-vpn/config:/config
+      - /mnt/cell_block_d/apps/qbittorrent-vpn/downloads:/downloads
+      - /mnt/cell_block_d/media:/mnt/cell_block_d/media
+
+  port-sync:
+    container_name: qbittorrent-port-sync
+    image: ghcr.io/killakam3084/port-sync:latest
+    pull_policy: always
+    restart: unless-stopped
+    network_mode: container:gluetun
+    depends_on:
+      - gluetun
+      - qbittorrent
+    environment:
+      QBITTORRENT_URL: http://127.0.0.1:30024
+      QBITTORRENT_USERNAME: admin
+      CHECK_INTERVAL: 30
+      PORT_FILE: /tmp/gluetun/forwarded_port
+      # --- secret injected by Infisical ---
+      QBITTORRENT_PASSWORD: ${QBITTORRENT_PASSWORD}
+    volumes:
+      - /mnt/cell_block_d/apps/qbittorrent-vpn/gluetun-port:/tmp/gluetun:ro
