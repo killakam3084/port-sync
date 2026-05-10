@@ -209,9 +209,16 @@ func main() {
 		log.Fatalf("Failed to create qBittorrent client: %v", err)
 	}
 
-	// Initial login
-	if err := client.Login(); err != nil {
-		log.Fatalf("Initial login failed: %v", err)
+	// Initial login — retry with backoff to handle qBittorrent startup race
+	for attempt := 1; ; attempt++ {
+		if err := client.Login(); err == nil {
+			break
+		} else if attempt >= 20 {
+			log.Fatalf("Initial login failed after %d attempts: %v", attempt, err)
+		} else {
+			log.Printf("Initial login failed (attempt %d/20): %v — retrying in 15s", attempt, err)
+			time.Sleep(15 * time.Second)
+		}
 	}
 
 	// Wait for port file to exist
