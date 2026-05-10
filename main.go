@@ -99,7 +99,10 @@ func (c *QBittorrentClient) Login() error {
 	body, _ := io.ReadAll(resp.Body)
 	bodyStr := strings.TrimSpace(string(body))
 
-	if resp.StatusCode != http.StatusOK || bodyStr != "Ok." {
+	// qBittorrent <5.2.0 returns 200 "Ok." on success; >=5.2.0 returns 204 No Content.
+	ok := (resp.StatusCode == http.StatusOK && bodyStr == "Ok.") ||
+		resp.StatusCode == http.StatusNoContent
+	if !ok {
 		return fmt.Errorf("login failed: status=%d, body=%s", resp.StatusCode, bodyStr)
 	}
 
