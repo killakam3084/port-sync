@@ -212,15 +212,21 @@ func main() {
 		log.Fatalf("Failed to create qBittorrent client: %v", err)
 	}
 
-	// Initial login — retry with backoff to handle qBittorrent startup race
+	// Initial login — retry indefinitely to handle qBittorrent startup race.
+	// Do not fatal-exit here: if qBittorrent is slow to start (or temporarily
+	// down), a fatal exit causes Docker to restart this container, which resets
+	// the counter and creates a crash-loop. Instead we back off gradually and
+	// keep waiting until qBittorrent is reachable.
 	for attempt := 1; ; attempt++ {
 		if err := client.Login(); err == nil {
 			break
-		} else if attempt >= 20 {
-			log.Fatalf("Initial login failed after %d attempts: %v", attempt, err)
 		} else {
-			log.Printf("Initial login failed (attempt %d/20): %v — retrying in 15s", attempt, err)
-			time.Sleep(15 * time.Second)
+			delay := 15 * time.Second
+			if attempt > 20 {
+				delay = 60 * time.Second // slow down after the first 5 minutes
+			}
+			log.Printf("Initial login failed (attempt %d): %v — retrying in %s", attempt, err, delay)
+			time.Sleep(delay)
 		}
 	}
 
