@@ -26,6 +26,14 @@ services:
     volumes:
       - /mnt/cell_block_d/apps/qbittorrent-vpn/gluetun:/gluetun
       - /mnt/cell_block_d/apps/qbittorrent-vpn/gluetun-port:/tmp/gluetun
+    # gluetun exposes a health server at 127.0.0.1:9999; it only reports
+    # healthy once the VPN tunnel is fully established.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9999 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   qbittorrent:
     container_name: qbittorrent
@@ -33,7 +41,8 @@ services:
     restart: unless-stopped
     network_mode: container:gluetun
     depends_on:
-      - gluetun
+      gluetun:
+        condition: service_healthy
     environment:
       PUID: 568
       PGID: 568
@@ -42,6 +51,12 @@ services:
       - /mnt/cell_block_d/apps/qbittorrent-vpn/config:/config
       - /mnt/cell_block_d/apps/qbittorrent-vpn/downloads:/downloads
       - /mnt/cell_block_d/media:/mnt/cell_block_d/media
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:30024/ -o /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
 
   port-sync:
     container_name: qbittorrent-port-sync
@@ -50,8 +65,10 @@ services:
     restart: unless-stopped
     network_mode: container:gluetun
     depends_on:
-      - gluetun
-      - qbittorrent
+      gluetun:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
     environment:
       QBITTORRENT_URL: http://127.0.0.1:30024
       QBITTORRENT_USERNAME: admin
