@@ -51,8 +51,15 @@ services:
       - /mnt/cell_block_d/apps/qbittorrent-vpn/config:/config
       - /mnt/cell_block_d/apps/qbittorrent-vpn/downloads:/downloads
       - /mnt/cell_block_d/media:/mnt/cell_block_d/media
+      # Cleanup hook: removes stale lockfile/ipc-socket before qbittorrent-nox
+      # starts. LSIO runs all scripts in /custom-cont-init.d/ at container
+      # startup before s6 brings up services.
+      - ./qbittorrent-init/clean-lockfiles.sh:/custom-cont-init.d/clean-lockfiles.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:30024/ -o /dev/null || exit 1"]
+      # Use the API version endpoint — always 200 when qBittorrent is up,
+      # independent of WebUI/theme state (avoids false failures if the
+      # alternative UI directory is empty and / returns 404).
+      test: ["CMD-SHELL", "curl -sf http://localhost:30024/api/v2/app/version -o /dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 20
