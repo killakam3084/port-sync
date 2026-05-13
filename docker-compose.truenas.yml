@@ -85,3 +85,10 @@ services:
       QBITTORRENT_PASSWORD: ${QBITTORRENT_PASSWORD}
     volumes:
       - /mnt/cell_block_d/apps/qbittorrent-vpn/gluetun-port:/tmp/gluetun:ro
+    healthcheck:
+      # No HTTP endpoint — verify the process is alive
+      test: ["CMD-SHELL", "ps | grep -v grep | grep port-sync"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
