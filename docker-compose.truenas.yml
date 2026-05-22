@@ -21,6 +21,7 @@ services:
       VPN_PORT_FORWARDING: "on"
       VPN_PORT_FORWARDING_PROVIDER: protonvpn
       FIREWALL_OUTBOUND_SUBNETS: 192.168.68.0/24
+      FIREWALL_INPUT_PORTS: "30024"
       # --- secret injected by Infisical ---
       WIREGUARD_PRIVATE_KEY: ${WIREGUARD_PRIVATE_KEY}
     volumes:
