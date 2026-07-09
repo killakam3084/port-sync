@@ -48,6 +48,8 @@ services:
       PUID: 568
       PGID: 568
       WEBUI_PORT: 30024
+      # Optional pin for VueTorrent init installer; leave unset to pull latest.
+      VUETORRENT_VERSION: ${VUETORRENT_VERSION:-}
     volumes:
       - /mnt/cell_block_d/apps/qbittorrent-vpn/config:/config
       - /mnt/cell_block_d/apps/qbittorrent-vpn/downloads:/downloads
