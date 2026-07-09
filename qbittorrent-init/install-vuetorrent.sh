@@ -8,8 +8,12 @@ CONFIG_DIR="/config/qBittorrent"
 THEMES_DIR="$CONFIG_DIR/themes"
 VUETORRENT_DIR="$THEMES_DIR/vuetorrent"
 
-# GitHub release URL for VueTorrent
-VUETORRENT_URL="https://github.com/VueTorrent/VueTorrent/releases/download/v2.34.0/vuetorrent.zip"
+# Pull latest by default; set VUETORRENT_VERSION to pin a specific release.
+if [ -n "$VUETORRENT_VERSION" ]; then
+    VUETORRENT_URL="https://github.com/VueTorrent/VueTorrent/releases/download/$VUETORRENT_VERSION/vuetorrent.zip"
+else
+    VUETORRENT_URL="https://github.com/VueTorrent/VueTorrent/releases/latest/download/vuetorrent.zip"
+fi
 TEMP_DIR="/tmp/vuetorrent-install"
 
 echo "[VueTorrent] Installing VueTorrent theme..."
