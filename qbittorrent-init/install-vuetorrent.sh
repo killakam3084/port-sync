@@ -27,13 +27,25 @@ if ! curl -sL -o "$TEMP_DIR/vuetorrent.zip" "$VUETORRENT_URL"; then
 fi
 
 echo "[VueTorrent] Extracting..." >&2
-cd "$TEMP_DIR"
-unzip -q vuetorrent.zip
+EXTRACT_DIR="$TEMP_DIR/extracted"
+rm -rf "$EXTRACT_DIR"
+mkdir -p "$EXTRACT_DIR"
+unzip -q "$TEMP_DIR/vuetorrent.zip" -d "$EXTRACT_DIR"
 
-# Copy to config, preserving ownership
-echo "[VueTorrent] Installing to $VUETORRENT_DIR..." >&2
+# Copy to config, preserving ownership. VueTorrent release zips may contain
+# either a top-level "vuetorrent/" folder or legacy "dist/" output.
+if [ -d "$EXTRACT_DIR/vuetorrent" ]; then
+    SOURCE_DIR="$EXTRACT_DIR/vuetorrent"
+elif [ -d "$EXTRACT_DIR/dist" ]; then
+    SOURCE_DIR="$EXTRACT_DIR/dist"
+else
+    echo "[VueTorrent] ERROR: Unexpected archive layout (no vuetorrent/ or dist/)" >&2
+    exit 1
+fi
+
+echo "[VueTorrent] Installing to $VUETORRENT_DIR from $SOURCE_DIR..." >&2
 rm -rf "$VUETORRENT_DIR"
-cp -r dist "$VUETORRENT_DIR"
+cp -r "$SOURCE_DIR" "$VUETORRENT_DIR"
 chown -R abc:abc "$VUETORRENT_DIR"
 
 # Cleanup
