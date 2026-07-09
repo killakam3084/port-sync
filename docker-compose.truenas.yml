@@ -56,6 +56,7 @@ services:
       # starts. LSIO runs all scripts in /custom-cont-init.d/ at container
       # startup before s6 brings up services.
       - ./qbittorrent-init/clean-lockfiles.sh:/custom-cont-init.d/clean-lockfiles.sh:ro
+      - ./qbittorrent-init/install-vuetorrent.sh:/custom-cont-init.d/install-vuetorrent.sh:ro
     healthcheck:
       # Use the API version endpoint — always 200 when qBittorrent is up,
       # independent of WebUI/theme state (avoids false failures if the
